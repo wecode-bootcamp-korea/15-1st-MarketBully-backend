@@ -41,10 +41,10 @@ INSTALLED_APPS = [
 
     'corsheaders',
 
+    'user.apps.UserConfig',
     'board.apps.BoardConfig',
     'order.apps.OrderConfig',
     'product.apps.ProductConfig',
-    'user.apps.UserConfig',
 ]
 
 MIDDLEWARE = [
