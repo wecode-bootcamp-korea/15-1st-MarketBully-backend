@@ -26,7 +26,6 @@ class Question(models.Model):
     created_at  = models.DateTimeField(auto_now_add=True)
     updated_at  = models.DateField(auto_now=True)
     is_private  = models.BooleanField(default=False)
-    comment_id  = models.ForeignKey('QuestionComment', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         db_table = 'questions'
@@ -36,6 +35,7 @@ class QuestionComment(models.Model):
     contents   = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
+    question   = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         db_table = 'question_comments'
