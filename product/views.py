@@ -32,7 +32,6 @@ class ProductDetailView(View):
                 'description_image_url' : product.detailedimage_set.get().description_image_url
                 }
 
-
         except Product.DoesNotExist:
             return JsonResponse({'message': 'PRODUCT_NOT_FOUND'}, status = 404)
         return JsonResponse({'message': 'SUCCESS', 'product_detail': product_detail}, status = 200)
