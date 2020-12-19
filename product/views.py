@@ -1,17 +1,9 @@
 import json
 
-from django.views       import View
 from django.http        import JsonResponse
+from django.views       import View
 
-from my_settings        import SECRET_KEY
-from .models            import (
-                                Category,
-                                Subcategory,
-                                Product,
-                                Discount,
-                                Origin,
-                                PackingType
-                               )
+from .models            import Product
 
 class ProductDetailView(View):
     def get(self, request, product_id):
