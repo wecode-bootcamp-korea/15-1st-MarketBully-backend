@@ -132,3 +132,24 @@ class OftenBuyingView(View):
 
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + str(e.args[0])}, status=400)
+
+
+    # @login_required
+    def get(self, request):  # 늘 사는 것 상품 조회
+        try:
+            user_id = 3  # 데코레이터 나오기 전까지 임의로 사용자 지정
+            often_buying = OftenBuying.objects.filter(user_id=user_id)
+
+            items_in_often_buying = [{
+                "id"               : item.id,
+                "product_id"       : item.product.id,
+                "name"             : item.product.name,
+                "price"            : item.product.price,
+                "image_url"        : item.product.image_url,
+            }for item in often_buying]
+
+            return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart": items_in_often_buying}, status=200)
+
+        except OftenBuying.DoesNotExist:
+            return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart":[]}, status=200)
+
