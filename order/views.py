@@ -5,7 +5,7 @@ from django.http      import JsonResponse
 from django.views     import View
 
 from order.models   import Cart, Order
-from user.models      import Address
+from user.models      import Address, OftenBuying, User
 
 
 class CartView(View):
@@ -113,4 +113,22 @@ class CartView(View):
 class OftenBuyingView(View):
     # @login_required
     def post(self, request):  # 늘 사는 것에 상품 담기
+        try:
+            data = json.loads(request.body)
+            user_id = "3"  # 데코레이터 나오기 전까지 사용자 임의지정
 
+            if not OftenBuying.objects.filter(product_id=data['product_id']).exists():
+                return JsonResponse({'MESSAGE': 'PRODUCT_DOES_NOT_EXIST'}, status=400)
+
+            # 사용자의 장바구니에 이미 해당 상품이 있는 경우 400 return
+            if OftenBuying.objects.filter(user_id=user_id, product_id=data['product_id']).exists():
+                return JsonResponse({'MESSAGE': 'PRODUCT_ALREADY_EXIST_IN_OFTEN_BUYING'}, status=400)
+            else:
+                OftenBuying.objects.create(
+                    user_id    = user_id,
+                    product_id = data['product_id'],
+                )
+                return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
+
+        except KeyError as e:
+            return JsonResponse({"MESSAGE": "KEY_ERROR => " + str(e.args[0])}, status=400)
