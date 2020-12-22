@@ -3,7 +3,7 @@ import json
 from django.http        import JsonResponse
 from django.views       import View
 
-from .models            import (Category, Subcategory, Product)
+from .models            import Category, Subcategory, Product
 
 class ProductDetailView(View):
     def get(self, request, product_id):
@@ -62,8 +62,6 @@ class ProductListView(View):
                 'discount_percentage' : product.discount.percentage,
                 'is_soldout'          : product.is_soldout,
                 'image_url'           : product.image_url,
-             #   'subcategory_id'      : product.subcategory.id,
-             #   'subcategory_name'    : product.subcategory.name
                 } for product in products]
 
         except ValueError:
@@ -111,5 +109,3 @@ class MdChoiceView(View):
             return JsonResponse({'message': 'VALUE_ERROR'}, status = 400)
 
         return JsonResponse({'message': 'SUCCESS', 'product_list': product_list}, status = 200)
-
-
