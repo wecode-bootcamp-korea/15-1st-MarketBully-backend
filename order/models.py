@@ -28,9 +28,10 @@ class PaymentMethod(models.Model):
 
 
 class Cart(models.Model):
-    order    = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, related_name="cart_order_set")
-    product  = models.ForeignKey("product.Product", on_delete=models.SET_NULL, null=True)
-    quantity = models.IntegerField(default=1)
+    order       = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, related_name="cart_order_set")
+    product     = models.ForeignKey("product.Product", on_delete=models.SET_NULL, null=True)
+    quantity    = models.IntegerField(default=1)
+    is_selected = models.BooleanField(null=True, default=False)
 
     class Meta:
         db_table = 'carts'

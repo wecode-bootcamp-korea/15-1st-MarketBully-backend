@@ -54,7 +54,6 @@ class Address(models.Model):
 class OftenBuying(models.Model):
     user     = models.ForeignKey("User", on_delete=models.CASCADE)
     product  = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
-    quantity = models.IntegerField(default=1)
 
     class Meta:
         db_table = 'often_buyings'
