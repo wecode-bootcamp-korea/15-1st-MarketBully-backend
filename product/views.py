@@ -39,20 +39,11 @@ class ProductDetailView(View):
 class ProductListView(View):
     def get(self, request):
         try:
-            offset              = int(request.GET.get('offset', 0))
-            limit               = int(request.GET.get('limit', 4))
-            subcategory_num     = request.GET.get('subcategory', None)
-            categories          = Category.objects.prefetch_related('subcategory_set')
-            products            = Product.objects.select_related('discount', 'subcategory').filter(subcategory=subcategory_num)if subcategory_num else Product.objects.all()
-
-            categories = [{
-                'id'          : category.id,
-                'name'        : category.name,
-                'subcategory' : [{
-                    'id'      : subcategory.id,
-                    'name'    : subcategory.name
-                    } for subcategory in category.subcategory_set.all()]
-                } for category in categories]
+            offset         = int(request.GET.get('offset', 0))
+            limit          = int(request.GET.get('limit', 4))
+            subcategory_id = request.GET.get('subcategory', None)
+            categories     = Category.objects.prefetch_related('subcategory_set')
+            products       = Product.objects.select_related('discount', 'subcategory').filter(subcategory=subcategory_id) if subcategory_id else Product.objects.all()
 
             product_list = [{
                 'id'                  : product.id,
@@ -67,24 +58,20 @@ class ProductListView(View):
         except ValueError:
             return JsonResponse({'message': 'VALUE_ERROR'}, status = 400)
 
-        return JsonResponse({'message': 'SUCCESS', 'categories': categories, 'product_list': product_list}, status = 200)
+        return JsonResponse({'message': 'SUCCESS', 'product_list': product_list}, status = 200)
 
 class CategoryView(View):
     def get(self,request):
-        try:
-            categories = Category.objects.prefetch_related('subcategory_set')
+        categories = Category.objects.prefetch_related('subcategory_set')
 
-            categories = [{
-                'id'          : category.id,
-                'name'        : category.name,
-                'subcategory' : [{
-                    'id'      : subcategory.id,
-                    'name'    : subcategory.name
-                    } for subcategory in category.subcategory_set.all()]
-                } for category in categories]
-
-        except ValueError:
-            return JsonResponse({'message': 'VALUE_ERROR'}, status = 400)
+        categories = [{
+            'id'          : category.id,
+            'name'        : category.name,
+            'subcategory' : [{
+                'id'      : subcategory.id,
+                'name'    : subcategory.name
+                } for subcategory in category.subcategory_set.all()]
+            } for category in categories]
 
         return JsonResponse({'message': 'SUCCESS', 'categories': categories}, status = 200)
 
