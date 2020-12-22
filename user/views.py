@@ -92,6 +92,7 @@ class SignupView(View):
             return JsonResponse({"message":"KEY_ERROR"}, status=400)
 
 
+
 class CheckAccountView(View):
     def post(self, request):
         data = json.loads(request.body)
@@ -133,46 +134,3 @@ class CheckEmailView(View):
     
         except KeyError:
             return JsonResponse({"message":"KEY_ERROR"}, status=400)
-
-
-class SigninView(View):
-        
-    def post(self, request):
-        data = json.loads(request.body)
-        
-        try: 
-            
-            if not User.objects.filter(account=data["account"]).exists():
-                return JsonResponse({"message":"UNKNOWN_USER"}, status=404)
-
-            if User.objects.filter(account=data["account"]).exists():
-
-                user = User.objects.get(account=data["account"]) 
-                hashed_pw = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-                if bcrypt.checkpw(data['password'].encode('utf-8'), user.password.encode('utf-8')):
-   
-                    access_token = jwt.encode({'id':user.account}, SECRET_KEY, ALGORITHM).decode('utf-8')
-
-                    return JsonResponse({"ACCESS_TOKEN":access_token}, status=201)
-
-                return JsonResponse({"message": "INVALID_PW"}, status = 401)
-
-            return JsonResponse({"message":"INVALID_ACCOUNT"}, status=401)
-
-        except KeyError:
-            return JsonResponse({"message":"KEY_ERROR"}, status=400)
-
-
-#class FindAccountView(view):
-#
-#    def post(self, request):
-#        data = json.loads(request.body)
-#
-#        try:
-#
-#            if not User.objects.filter(name=data["name"], email=data["email"]).exists():
-#                return JsonResponse({"message": ""})
-#
-#            if User.objects.filter(name=data["name"], email=data["email"]).exists():
-#                account = User.objects.get(account=data["account"])
