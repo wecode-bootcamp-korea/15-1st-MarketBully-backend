@@ -7,6 +7,8 @@ from django.db      import transaction
 
 from .models        import User, Gender, Grade, TermsAndCondition, Address
 from my_settings    import SECRET_KEY, ALGORITHM
+from datetime       import datetime, timedelta
+from .utils         import signin_decorator
 
 # Create your views here.
 class SignupView(View): 
@@ -29,13 +31,11 @@ class SignupView(View):
         REGEX_EMAIL = '^[a-zA-Z0-9+-_.]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
 
         return re.match(REGEX_EMAIL, email)
-    
 
     def validate_phone_number(self, phone_number):
         REGEX_PHONE_NUMBER = '^\d{3}?[-]\d{3,4}?[-]\d{4}$'
         
         return re.match(REGEX_PHONE_NUMBER, phone_number)
-    
 
     def post(self, request):
         data = json.loads(request.body)
@@ -62,7 +62,7 @@ class SignupView(View):
             recommender = data.get('recommender')
             event_name  = data.get('event_name')
 
-            with transaction.atomic():  # user_model.save(), address.save() 중 하나만 실패해도 모든 commit rollback 
+            with transaction.atomic():   
                 user_model = User(
                     account             = data['account'],
                     password            = hashed_pw,
@@ -92,7 +92,6 @@ class SignupView(View):
             return JsonResponse({"message":"KEY_ERROR"}, status=400)
 
 
-
 class CheckAccountView(View):
     def post(self, request):
         data = json.loads(request.body)
@@ -104,7 +103,7 @@ class CheckAccountView(View):
             if user_model.account == '':
                 return JsonResponse({"message":"ACCOUNT_NOT_ENTERED"}, status=400)
             
-            if User.objects.filter(account=data["account"]).exists():
+            if User.objects.filter(account=data['account']).exists():
                 return JsonResponse({"message":"ACCOUNT_EXIST"}, status=409)
             
             return re.match(REGEX_ACCOUNT_1, account) or re.match(REGEX_ACCOUNT_2, account)
@@ -125,12 +124,37 @@ class CheckEmailView(View):
             if user_model.email == '':
                 return JsonResponse({"message":"EMAIL_NOT_ENTERED"}, status=400)
 
-            if User.objects.filter(email=data["email"]).exists():
+            if User.objects.filter(email=data['email']).exists():
                 return JsonResponse({"message":"EMAIL_EXIST"}, status=409)
 
             return re.match(REGEX_EMAIL, email)
 
             return JsonResponse({"message":"SUCCESS"}, status=200)
     
+        except KeyError:
+            return JsonResponse({"message":"KEY_ERROR"}, status=400)
+
+
+class SigninView(View):
+    def post(self, request):
+        data = json.loads(request.body)
+
+        try:
+            if not User.objects.filter(account=data['account']).exists():
+                return JsonResponse({"message":"USER_NOT_EXIST"}, status=404)
+
+            if User.objects.filter(account=data['account']).exists():
+                user      = User.objects.get(account=data['account'])
+                hashed_pw = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+                if bcrypt.checkpw(data['password'].encode('utf-8'), user.password.encode('utf-8')):
+                    access_token = jwt.encode({'id':user.account, 'exp': datetime.utcnow() + timedelta(hours=24)}, SECRET_KEY, ALGORITHM).decode('utf-8')
+
+                    return JsonResponse({"ACCESS_TOKEN":access_token}, status=201)
+
+                return JsonResponse({"message": "INVALID_USER"}, status = 401)
+
+            return JsonResponse({"message":"INVALID_USER"}, status=401)
+
         except KeyError:
             return JsonResponse({"message":"KEY_ERROR"}, status=400)
