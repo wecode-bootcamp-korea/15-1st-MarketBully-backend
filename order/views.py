@@ -1,57 +1,56 @@
 import json
 from datetime import datetime
 
-from django.http      import JsonResponse
-from django.views     import View
+from django.http  import JsonResponse
+from django.views import View
+from django.db    import transaction
 
 from order.models   import Cart, Order
-from user.models      import Address, OftenBuying, User
+from user.models    import Address, OftenBuying, User
 from product.models import Product
 
 
 class CartView(View):
     # @login_required
-    def post(self, request):  # 장바구니에 상품 담기
+    @transaction.atomic
+    def post(self, request):
         try:
             data = json.loads(request.body)
-            user_id = "3"  # 데코레이터 나오기 전까지 사용자 임의지정
+            user_id = "3"
 
-            # 사용자 장바구니 가져오기, 있으면 가져오고 없으면 생성하여 가져옴
             if not Order.objects.filter(user_id=user_id, status_id=1).exists():
-                order_cart = Order.objects.create(
+                new_order = Order.objects.create(
                     user_id           = user_id,
                     order_number      = user_id + "-" + datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f'),
                     status_id         = 1,
                     address_id        = Address.objects.get(user_id=user_id, is_active=1).id,
                     payment_method_id = 1
                 )
-                order_cart_id = order_cart.id
+                new_order_id = new_order.id
             else:
-                order_cart_id = Order.objects.get(user_id=user_id, status_id=1).id
+                new_order_id = Order.objects.get(user_id=user_id, status_id=1).id
 
-            # 사용자의 장바구니에 이미 해당 상품이 있는 경우 전달된 quantity 만큼 그 수량을 올림
-            if Cart.objects.filter(order_id=order_cart_id, product_id=data['product_id']).exists():
-                product_in_cart = Cart.objects.get(order_id=order_cart_id, product_id=data['product_id'])
+            if Cart.objects.filter(order_id=new_order_id, product_id=data['product_id']).exists():
+                product_in_cart = Cart.objects.get(order_id=new_order_id, product_id=data['product_id'])
                 product_in_cart.quantity += int(data['quantity'])
                 product_in_cart.save()
                 return JsonResponse({'MESSAGE': 'SUCCESS'}, status=200)
-            else:
-                Cart.objects.create(
-                    order_id   = order_cart_id,
-                    product_id = data['product_id'],
-                    quantity   = data['quantity'],
-                )
-                return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
+
+            Cart.objects.create(
+                order_id   = new_order_id,
+                product_id = data['product_id'],
+                quantity   = data['quantity'],
+            )
+            return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
 
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
-
     # @login_required
-    def get(self, request):  # 장바구니 상품 조회
+    def get(self, request):
         try:
-            user_id = 3  # 데코레이터 나오기 전까지 임의로 사용자 지정
-            order_cart_id = Order.objects.get(user_id=user_id, status=1).id   # status=1 -> 장바구니
+            user_id = 3
+            order_cart_id = Order.objects.get(user_id=user_id, status=1).id
             cart = Cart.objects.filter(order_id=order_cart_id).prefetch_related("product__discount", "product__packing_type")
 
             items_in_cart = [{
@@ -72,7 +71,6 @@ class CartView(View):
         except Cart.DoesNotExist:
             return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart":[]}, status=200)
 
-
     # @login_required
     def delete(self, request):
         try:
@@ -87,12 +85,11 @@ class CartView(View):
         except Cart.DoesNotExist:
             return JsonResponse({"MESSAGE": "ITEM_DOES_NOT_EXIST"}, status=400)
 
-
     # @login_required
     def patch(self, request):
         try:
-            data = json.loads(request.body)
-            delta = data['delta']
+            data      = json.loads(request.body)
+            delta     = data['delta']
             cart_item = Cart.objects.get(id=data['cart_item_id'])
 
             if delta == "minus":
@@ -102,7 +99,7 @@ class CartView(View):
             elif delta == "plus":
                 cart_item.quantity += 1
             else:
-                return JsonResponse({"MESSAGE": "KEY_ERROR"}, status=400)
+                return JsonResponse({"MESSAGE": "KEY_ERROR => 'delta' SHOULD BE 'minus' OR 'plus'"}, status=400)
             cart_item.save()
 
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
@@ -113,31 +110,33 @@ class CartView(View):
 
 class OftenBuyingView(View):
     # @login_required
-    def post(self, request):  # 늘 사는 것에 상품 담기
+    def post(self, request):
         try:
-            data = json.loads(request.body)
-            user_id = 3 # 데코레이터 나오기 전까지 사용자 임의지정
+            data    = json.loads(request.body)
+            user_id = 3
 
             if not Product.objects.filter(id=data['product_id']).exists():
                 return JsonResponse({'MESSAGE': 'PRODUCT_DOES_NOT_EXIST'}, status=400)
 
             if OftenBuying.objects.filter(user_id=user_id, product_id=data['product_id']).exists():
                 return JsonResponse({'MESSAGE': 'PRODUCT_ALREADY_EXIST_IN_OFTEN_BUYING'}, status=400)
-            else:
-                OftenBuying.objects.create(
-                    user_id    = user_id,
-                    product_id = data['product_id'],
-                )
-                return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
+
+            OftenBuying.objects.create(
+                user_id    = user_id,
+                product_id = data['product_id'],
+            )
+            return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
 
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + str(e.args[0])}, status=400)
 
     # @login_required
-    def get(self, request):  # 늘 사는 것 상품 조회
+    def get(self, request):
         try:
-            user_id = 3  # 데코레이터 나오기 전까지 임의로 사용자 지정
-            often_buying = OftenBuying.objects.filter(user_id=user_id).select_related('product')
+            # user = request.user
+            user_id      = 3
+            user         = User.objects.get(id=user_id)
+            often_buying = user.oftenbuying_set.all().select_related('product')
 
             items_in_often_buying = [{
                 "id"               : item.id,
