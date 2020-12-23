@@ -73,7 +73,7 @@ class SignupView(View):
                     birth_date          = birth_date,
                     recommender         = recommender,
                     event_name          = event_name,
-                    grade_id            = data['grade_id'],
+                    grade_id            = 1,
                     terms_and_condition = TermsAndCondition(id=1),
                     mileage             = 0
                     )
@@ -81,15 +81,15 @@ class SignupView(View):
                 user_model.save()
 
                 Address(
-                    name      = data['address.name'],
+                    name      = data['address'],
                     user_id   = user_model.id,
                     is_active = True
                     ).save()
                 
                 return JsonResponse({"message":"SUCCESS"}, status=201)
 
-        except KeyError:
-            return JsonResponse({"message":"KEY_ERROR"}, status=400)
+        except KeyError as e:
+            return JsonResponse({"message":"KEY_ERROR =>" + e.args[0]}, status=400)
 
 
 class CheckAccountView(View):
@@ -104,7 +104,7 @@ class CheckAccountView(View):
                 return JsonResponse({"message":"ACCOUNT_NOT_ENTERED"}, status=400)
             
             if User.objects.filter(account=data['account']).exists():
-                return JsonResponse({"message":"ACCOUNT_EXIST"}, status=409)
+                return JsonResponse({"message":"ACCOUNT_EXIST"}, status=400)
             
             return re.match(REGEX_ACCOUNT_1, account) or re.match(REGEX_ACCOUNT_2, account)
 
@@ -125,7 +125,7 @@ class CheckEmailView(View):
                 return JsonResponse({"message":"EMAIL_NOT_ENTERED"}, status=400)
 
             if User.objects.filter(email=data['email']).exists():
-                return JsonResponse({"message":"EMAIL_EXIST"}, status=409)
+                return JsonResponse({"message":"EMAIL_EXIST"}, status=400)
 
             return re.match(REGEX_EMAIL, email)
 
@@ -158,3 +158,13 @@ class SigninView(View):
 
         except KeyError:
             return JsonResponse({"message":"KEY_ERROR"}, status=400)
+
+
+class FindAccountView(View):
+    def post(self, request):
+        data = json.loads(request.body)
+
+        if User.objects.filter(account=data['account']).exists():
+            print (data['account'])
+            return JsonResponse({"message":"Success"}, status=200)
+        return JsonResponse({"message":"fail"}, status=400)
