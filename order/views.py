@@ -40,6 +40,7 @@ class CartView(View):
                 order_id   = new_order_id,
                 product_id = data['product_id'],
                 quantity   = data['quantity'],
+                is_selected = True,
             )
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
 
@@ -91,7 +92,8 @@ class CartView(View):
     def patch(self, request):
         try:
             data      = json.loads(request.body)
-            delta     = data['delta']
+            delta     = data.get('delta')
+            select    = data.get('select')
             cart_item = Cart.objects.get(id=data['cart_item_id'])
 
             if delta == "minus":
@@ -100,13 +102,19 @@ class CartView(View):
                 cart_item.quantity -= 1
             elif delta == "plus":
                 cart_item.quantity += 1
+            elif select == "True":
+                cart_item.is_selected = True
+            elif select == "False":
+                cart_item.is_selected = False
             else:
-                return JsonResponse({"MESSAGE": "KEY_ERROR => 'delta' SHOULD BE 'minus' OR 'plus'"}, status=400)
+                return JsonResponse({"MESSAGE": "KEY_ERROR => IMPROPER delta OR select"}, status=400)
             cart_item.save()
 
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
 
         except KeyError as e:
+            return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
+        except Cart.DoesNotExist as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
 
