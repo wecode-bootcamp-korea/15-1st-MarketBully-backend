@@ -42,7 +42,6 @@ class ProductListView(View):
             offset         = int(request.GET.get('offset', 0))
             limit          = int(request.GET.get('limit', 100))
             subcategory_id = request.GET.get('subcategory', None)
-            categories     = Category.objects.prefetch_related('subcategory_set')
             products       = Product.objects.select_related('discount', 'subcategory').filter(subcategory=subcategory_id) if subcategory_id else Product.objects.all()
 
             product_list = [{
