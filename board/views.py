@@ -39,6 +39,7 @@ class ReviewView(View):
                 'help_count': review.help_count,
                 'hit_count' : int(review.hit_count),
                 'image_url' : review.image_url,
+                'created_at': review.created_at,
             }
 
             return JsonResponse({"MESSAGE": "SUCCESS", "review_post": review_post}, status=201)
