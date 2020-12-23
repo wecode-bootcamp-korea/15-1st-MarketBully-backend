@@ -8,15 +8,16 @@ from django.db    import transaction
 from order.models   import Cart, Order
 from user.models    import Address, OftenBuying, User
 from product.models import Product
+from user.utils     import signin_decorator
 
 
 class CartView(View):
-    # @login_required
+    @signin_decorator
     @transaction.atomic
     def post(self, request):
         try:
             data = json.loads(request.body)
-            user_id = "1"
+            user_id = str(request.user.id)
 
             new_order, flag = Order.objects.get_or_create(
                 user_id    = user_id,
@@ -31,15 +32,15 @@ class CartView(View):
             new_order_id = new_order.id
 
             if Cart.objects.filter(order_id=new_order_id, product_id=data['product_id']).exists():
-                product_in_cart = Cart.objects.get(order_id=new_order_id, product_id=data['product_id'])
+                product_in_cart           = Cart.objects.get(order_id=new_order_id, product_id=data['product_id'])
                 product_in_cart.quantity += int(data['quantity'])
                 product_in_cart.save()
                 return JsonResponse({'MESSAGE': 'SUCCESS'}, status=200)
 
             Cart.objects.create(
-                order_id   = new_order_id,
-                product_id = data['product_id'],
-                quantity   = data['quantity'],
+                order_id    = new_order_id,
+                product_id  = data['product_id'],
+                quantity    = data['quantity'],
                 is_selected = True,
             )
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
@@ -48,23 +49,23 @@ class CartView(View):
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
 
-    # @login_required
+    @signin_decorator
     def get(self, request):
         try:
-            user_id = "1"
+            user_id = request.user.id
             cart = Cart.objects.filter(order__user_id=user_id, order__status=1).prefetch_related("product__discount", "product__packing_type")
 
             items_in_cart = [{
-                "id"               : item.id,
-                "product_id"       : item.product.id,
-                "name"             : item.product.name,
-                "quantity"         : item.quantity,
-                "price"            : item.product.price,
-                "discount_rate"    : float(item.product.discount.percentage),
-                "is_soldout"       : item.product.is_soldout,
-                "cart_packing_type": item.product.packing_type.cart_packing_type,
-                "image_url"        : item.product.image_url,
-                "selected"         : item.is_selected,
+                "id"                : item.id,
+                "product_id"        : item.product.id,
+                "name"              : item.product.name,
+                "quantity"          : item.quantity,
+                "price"             : item.product.price,
+                "discount_rate"     : float(item.product.discount.percentage),
+                "is_soldout"        : item.product.is_soldout,
+                "cart_packing_type" : item.product.packing_type.cart_packing_type,
+                "image_url"         : item.product.image_url,
+                "selected"          : item.is_selected,
             }for item in cart]
 
             return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart": items_in_cart}, status=200)
@@ -73,7 +74,7 @@ class CartView(View):
             return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart":[]}, status=200)
 
 
-    # @login_required
+    @signin_decorator
     def delete(self, request):
         try:
             data = json.loads(request.body)
@@ -88,7 +89,7 @@ class CartView(View):
             return JsonResponse({"MESSAGE": "ITEM_DOES_NOT_EXIST"}, status=400)
 
 
-    # @login_required
+    @signin_decorator
     def patch(self, request):
         try:
             data      = json.loads(request.body)
@@ -119,11 +120,11 @@ class CartView(View):
 
 
 class OftenBuyingView(View):
-    # @login_required
+    @signin_decorator
     def post(self, request):
         try:
             data    = json.loads(request.body)
-            user_id = 3
+            user_id = request.user.id
 
             if not Product.objects.filter(id=data['product_id']).exists():
                 return JsonResponse({'MESSAGE': 'PRODUCT_DOES_NOT_EXIST'}, status=400)
@@ -140,11 +141,10 @@ class OftenBuyingView(View):
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + str(e.args[0])}, status=400)
 
-    # @login_required
+    @signin_decorator
     def get(self, request):
         try:
-            # user = request.user
-            user_id      = 3
+            user_id      = request.user.id
             user         = User.objects.get(id=user_id)
             often_buying = user.oftenbuying_set.all().select_related('product')
 
@@ -161,7 +161,7 @@ class OftenBuyingView(View):
         except OftenBuying.DoesNotExist:
             return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart":[]}, status=200)
 
-    # @login_required
+    @signin_decorator
     def delete(self, request):
         try:
             data = json.loads(request.body)
