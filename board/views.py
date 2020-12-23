@@ -1,21 +1,21 @@
 import json
 
-from django.http  import JsonResponse
-from django.views import View
+from django.http            import JsonResponse
+from django.views           import View
 from django.core.exceptions import ValidationError
 
-from .models import Question
+from .models    import Question
+from user.utils import signin_decorator
 
 
 class QuestionView(View):
-    #@login_required
+    @signin_decorator
     def post(self, request):
         try:
             data = json.loads(request.body)
-            user_id = "3"
 
             Question.objects.create(
-                author_id  = user_id,
+                author_id  = request.user.id,
                 product_id = data['product_id'],
                 title      = data['title'],
                 contents   = data['contents'],
@@ -28,7 +28,7 @@ class QuestionView(View):
         except ValidationError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + str(e.args[0])}, status=400)
 
-    # @login_required
+    @signin_decorator
     def get(self, request, question_id):
         try:
             question = Question.objects.get(id=question_id)
@@ -46,7 +46,7 @@ class QuestionView(View):
            return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
 
-    # @login_required
+    @signin_decorator
     def patch(self, request, question_id):
         try:
             data = json.loads(request.body)
@@ -68,7 +68,7 @@ class QuestionView(View):
         except Question.DoesNotExist:
             return JsonResponse({"MESSAGE": "QUESTION_DOES_NOT_EXIST"}, status=400)
 
-    # @login_required
+    @signin_decorator
     def delete(self, request, question_id):
         try:
             user_id = "3"
@@ -83,7 +83,7 @@ class QuestionView(View):
 
 
 class QuestionListView(View):
-    # @login_required
+    @signin_decorator
     def get(self, request, product_id):
         try:
             offset = int(request.GET.get('offset'), 0)
