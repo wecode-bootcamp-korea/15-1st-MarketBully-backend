@@ -32,14 +32,14 @@ class ReviewView(View):
             review = Review.objects.get(id=review_id)
             review.hit_count += 1
             review.save()
-            review_post = [{
+            review_post = {
                 'id'        : review.id,
                 'title'     : review.title,
                 'contents'  : review.contents,
                 'help_count': review.help_count,
                 'hit_count' : int(review.hit_count),
                 'image_url' : review.image_url,
-            }]
+            }
 
             return JsonResponse({"MESSAGE": "SUCCESS", "review_post": review_post}, status=201)
 
@@ -89,7 +89,7 @@ class ReviewListView(View):
             limit  = int(request.GET.get('limit'), 10)
             limit += offset
 
-            reviews = Review.objects.order_by('-id').filter(product_id=product_id)
+            reviews = Review.objects.order_by('-create_at').filter(product_id=product_id)
 
             review_list = [{
                 'id'        : review.id,
