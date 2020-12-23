@@ -92,12 +92,13 @@ class ReviewListView(View):
             reviews = Review.objects.order_by('-create_at').filter(product_id=product_id)
 
             review_list = [{
-                'id'        : review.id,
-                'title'     : review.title,
-                'contents'  : review.contents,
-                'help_count': review.help_count,
-                'hit_count' : review.hit_count,
-                'image_url' : review.image_url,
+                'id'         : review.id,
+                'title'      : review.title,
+                'contents'   : review.contents,
+                'help_count' : review.help_count,
+                'hit_count'  : review.hit_count,
+                'image_url'  : review.image_url,
+                'created_at' : review.created_at,
 
             }for review in reviews[offset:limit]]
 
