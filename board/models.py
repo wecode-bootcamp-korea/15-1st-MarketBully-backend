@@ -13,7 +13,7 @@ class Review(models.Model):
     hit_count        = models.IntegerField()
     created_at       = models.DateTimeField(auto_now_add=True)
     updated_at       = models.DateField(auto_now=True)
-    image_url = models.URLField(max_length=2000)
+    image_url        = models.URLField(max_length=2000)
 
     class Meta:
         db_table = 'reviews'
