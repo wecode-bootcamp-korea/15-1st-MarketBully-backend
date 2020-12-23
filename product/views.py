@@ -40,7 +40,7 @@ class ProductListView(View):
     def get(self, request):
         try:
             offset         = int(request.GET.get('offset', 0))
-            limit          = int(request.GET.get('limit', 4))
+            limit          = int(request.GET.get('limit', 100))
             subcategory_id = request.GET.get('subcategory', None)
             categories     = Category.objects.prefetch_related('subcategory_set')
             products       = Product.objects.select_related('discount', 'subcategory').filter(subcategory=subcategory_id) if subcategory_id else Product.objects.all()
@@ -53,7 +53,7 @@ class ProductListView(View):
                 'discount_percentage' : product.discount.percentage,
                 'is_soldout'          : product.is_soldout,
                 'image_url'           : product.image_url,
-                } for product in products]
+                } for product in products[offset:limit]]
 
         except ValueError:
             return JsonResponse({'message': 'VALUE_ERROR'}, status = 400)
@@ -67,7 +67,7 @@ class CategoryView(View):
         categories = [{
             'id'          : category.id,
             'name'        : category.name,
-            'subcategory' : [{
+            'subcategories' : [{
                 'id'      : subcategory.id,
                 'name'    : subcategory.name
                 } for subcategory in category.subcategory_set.all()]
