@@ -1,3 +1,5 @@
+
+
 """market_bully URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -18,4 +20,8 @@ from django.urls import path, include
 urlpatterns = [
     path('product', include('product.urls')),
     path('user', include('user.urls')),
-]
+<<<<<<< HEAD
+    ]
+=======
+    ]
+>>>>>>> master
