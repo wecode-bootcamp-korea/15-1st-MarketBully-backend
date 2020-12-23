@@ -37,7 +37,7 @@ class QuestionView(View):
                 'title'      : question.title,
                 'contents'   : question.contents,
                 'private'    : question.is_private,
-                'create_at'  : question.created_at,
+                'created_at'  : question.created_at,
             }
 
             return JsonResponse({"MESSAGE": "SUCCESS", "question_post": question_post}, status=201)
@@ -85,19 +85,19 @@ class QuestionListView(View):
             limit  = int(request.GET.get('limit'), 10)
             limit += offset
 
-            questions = Question.objects.order_by('-create_at').filter(product_id=product_id)
+            questions = Question.objects.order_by('-created_at').filter(product_id=product_id)
 
             question_list = [{
-                'id'        : question.id,
-                'product_id': question.product_id,
-                'title'     : question.title,
-                'contents'  : question.contents,
-                'private'   : question.is_private,
-                'create_at' : question.created_at,
+                'id'         : question.id,
+                'product_id' : question.product_id,
+                'title'      : question.title,
+                'contents'   : question.contents,
+                'private'    : question.is_private,
+                'created_at' : question.created_at,
 
             }for question in questions[offset:limit]]
 
             return JsonResponse({'MESSAGE': 'SUCCESS', "question_list": question_list}, status=200)
 
         except Exception as e:
-            return JsonResponse({'message' : 'ERROR => ' + e.args[0]}, status = 400)
+            return JsonResponse({'MESSAGE' : 'ERROR => ' + e.args[0]}, status = 400)
