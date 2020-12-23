@@ -1,5 +1,7 @@
-"""market_bully URL Configuration
 
+
+
+"""market_bully URL Configuration
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.1/topics/http/urls/
 Examples:
@@ -19,4 +21,6 @@ urlpatterns = [
     path('user', include('user.urls')),
     path('order', include('order.urls')),
     path('product', include('product.urls')),
+    path('user', include('user.urls')),
+    path('order', include('order.urls')),
 ]

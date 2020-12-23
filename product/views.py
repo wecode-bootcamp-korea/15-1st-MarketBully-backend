@@ -3,7 +3,7 @@ import json
 from django.http        import JsonResponse
 from django.views       import View
 
-from .models            import Product
+from .models            import Category, Subcategory, Product
 
 class ProductDetailView(View):
     def get(self, request, product_id):
@@ -35,3 +35,63 @@ class ProductDetailView(View):
         except Product.DoesNotExist:
             return JsonResponse({'message': 'PRODUCT_NOT_FOUND'}, status = 404)
         return JsonResponse({'message': 'SUCCESS', 'product_detail': product_detail}, status = 200)
+
+class ProductListView(View):
+    def get(self, request):
+        try:
+            offset         = int(request.GET.get('offset', 0))
+            limit          = int(request.GET.get('limit', 100))
+            subcategory_id = request.GET.get('subcategory', None)
+            products       = Product.objects.select_related('discount', 'subcategory').filter(subcategory=subcategory_id) if subcategory_id else Product.objects.all()
+
+            product_list = [{
+                'id'                  : product.id,
+                'name'                : product.name,
+                'subtitle'            : product.subtitle,
+                'price'               : product.price,
+                'discount_percentage' : product.discount.percentage,
+                'is_soldout'          : product.is_soldout,
+                'image_url'           : product.image_url,
+                } for product in products[offset:limit]]
+
+        except ValueError:
+            return JsonResponse({'message': 'VALUE_ERROR'}, status = 400)
+
+        return JsonResponse({'message': 'SUCCESS', 'product_list': product_list}, status = 200)
+
+class CategoryView(View):
+    def get(self,request):
+        categories = Category.objects.prefetch_related('subcategory_set')
+
+        categories = [{
+            'id'          : category.id,
+            'name'        : category.name,
+            'subcategories' : [{
+                'id'      : subcategory.id,
+                'name'    : subcategory.name
+                } for subcategory in category.subcategory_set.all()]
+            } for category in categories]
+
+        return JsonResponse({'message': 'SUCCESS', 'categories': categories}, status = 200)
+
+class MdChoiceView(View):
+    def get(self, request):
+        try:
+            products = Product.objects.select_related('discount', 'subcategory')
+
+            product_list = [{
+                'id'                  : product.id,
+                'name'                : product.name,
+                'subtitle'            : product.subtitle,
+                'price'               : product.price,
+                'discount_percentage' : product.discount.percentage,
+                'is_soldout'          : product.is_soldout,
+                'image_url'           : product.image_url,
+                'subcategory_id'      : product.subcategory.id,
+                'subcategory_name'    : product.subcategory.name
+                } for product in products]
+
+        except ValueError:
+            return JsonResponse({'message': 'VALUE_ERROR'}, status = 400)
+
+        return JsonResponse({'message': 'SUCCESS', 'product_list': product_list}, status = 200)
