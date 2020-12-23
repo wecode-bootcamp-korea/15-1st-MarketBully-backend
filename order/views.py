@@ -5,8 +5,9 @@ from django.http  import JsonResponse
 from django.views import View
 from django.db    import transaction
 
-from order.models import Cart, Order
-from user.models  import Address
+from order.models   import Cart, Order
+from user.models    import Address, OftenBuying, User
+from product.models import Product
 
 
 class CartView(View):
@@ -107,3 +108,61 @@ class CartView(View):
 
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
+
+
+class OftenBuyingView(View):
+    # @login_required
+    def post(self, request):
+        try:
+            data    = json.loads(request.body)
+            user_id = 3
+
+            if not Product.objects.filter(id=data['product_id']).exists():
+                return JsonResponse({'MESSAGE': 'PRODUCT_DOES_NOT_EXIST'}, status=400)
+
+            if OftenBuying.objects.filter(user_id=user_id, product_id=data['product_id']).exists():
+                return JsonResponse({'MESSAGE': 'PRODUCT_ALREADY_EXIST_IN_OFTEN_BUYING'}, status=400)
+
+            OftenBuying.objects.create(
+                user_id    = user_id,
+                product_id = data['product_id'],
+            )
+            return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
+
+        except KeyError as e:
+            return JsonResponse({"MESSAGE": "KEY_ERROR => " + str(e.args[0])}, status=400)
+
+    # @login_required
+    def get(self, request):
+        try:
+            # user = request.user
+            user_id      = 3
+            user         = User.objects.get(id=user_id)
+            often_buying = user.oftenbuying_set.all().select_related('product')
+
+            items_in_often_buying = [{
+                "id"               : item.id,
+                "product_id"       : item.product.id,
+                "name"             : item.product.name,
+                "price"            : item.product.price,
+                "image_url"        : item.product.image_url,
+            }for item in often_buying]
+
+            return JsonResponse({"MESSAGE": "SUCCESS", "items_in_often_buying": items_in_often_buying}, status=200)
+
+        except OftenBuying.DoesNotExist:
+            return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart":[]}, status=200)
+
+    # @login_required
+    def delete(self, request):
+        try:
+            data = json.loads(request.body)
+            item = OftenBuying.objects.get(id=data['often_buying_item_id'])
+            item.delete()
+
+            return JsonResponse({'MESSAGE': 'SUCCESS'}, status=204)
+
+        except KeyError as e:
+            return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
+        except OftenBuying.DoesNotExist:
+            return JsonResponse({"MESSAGE": "ITEM_DOES_NOT_EXIST"}, status=400)
