@@ -4,17 +4,17 @@ from django.http  import JsonResponse
 from django.views import View
 
 from .models import Review
+from user.utils import signin_decorator
 
 
 class ReviewView(View):
-    #@login_required
+    @signin_decorator
     def post(self, request):
         try:
             data = json.loads(request.body)
-            user_id = "3"
 
             Review.objects.create(
-                author_id  = user_id,
+                author_id  = request.user.id,
                 product_id = data['product_id'],
                 title      = data['title'],
                 contents   = data['contents'],
@@ -27,7 +27,6 @@ class ReviewView(View):
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
-    # @login_required
     def get(self, request, review_id):
         try:
             review = Review.objects.get(id=review_id)
@@ -48,13 +47,12 @@ class ReviewView(View):
            return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
 
-    # @login_required
+    @signin_decorator
     def patch(self, request, review_id):
         try:
             data = json.loads(request.body)
-            user_id = "3"
 
-            review = Review.objects.get(id=review_id, author_id=user_id)
+            review = Review.objects.get(id=review_id, author_id=request.user.id,)
             if data.get('title'):
                 review.title = data.get('title')
             if data.get('contents'):
@@ -72,12 +70,10 @@ class ReviewView(View):
         except Review.DoesNotExist:
             return JsonResponse({"MESSAGE": "REVIEW_DOES_NOT_EXIST"}, status=400)
 
-    # @login_required
+    @signin_decorator
     def delete(self, request, review_id):
         try:
-            user_id = "3"
-
-            review = Review.objects.get(id=review_id, author_id=user_id)
+            review = Review.objects.get(id=review_id, author_id=request.user.id)
             review.delete()
 
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=204)
@@ -87,7 +83,6 @@ class ReviewView(View):
 
 
 class ReviewListView(View):
-    # @login_required
     def get(self, request, product_id):
         try:
             offset = int(request.GET.get('offset'), 0)
