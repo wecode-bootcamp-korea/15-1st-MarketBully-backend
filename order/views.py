@@ -16,19 +16,19 @@ class CartView(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
-            user_id = "3"
+            user_id = "1"
 
-            if not Order.objects.filter(user_id=user_id, status_id=1).exists():
-                new_order = Order.objects.create(
-                    user_id           = user_id,
-                    order_number      = user_id + "-" + datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f'),
-                    status_id         = 1,
-                    address_id        = Address.objects.get(user_id=user_id, is_active=1).id,
-                    payment_method_id = 1
-                )
-                new_order_id = new_order.id
-            else:
-                new_order_id = Order.objects.get(user_id=user_id, status_id=1).id
+            new_order, flag = Order.objects.get_or_create(
+                user_id    = user_id,
+                status_id  = 1,
+                address_id = Address.objects.get(user_id=user_id, is_active=1).id,
+                payment_method_id = 1,
+            )
+            if not flag:
+                new_order.order_number = user_id + "-" + datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
+                new_order.save()
+
+            new_order_id = new_order.id
 
             if Cart.objects.filter(order_id=new_order_id, product_id=data['product_id']).exists():
                 product_in_cart = Cart.objects.get(order_id=new_order_id, product_id=data['product_id'])
@@ -46,12 +46,12 @@ class CartView(View):
         except KeyError as e:
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
 
+
     # @login_required
     def get(self, request):
         try:
-            user_id = 3
-            order_cart_id = Order.objects.get(user_id=user_id, status=1).id
-            cart = Cart.objects.filter(order_id=order_cart_id).prefetch_related("product__discount", "product__packing_type")
+            user_id = "1"
+            cart = Cart.objects.filter(order__user_id=user_id, order__status=1).prefetch_related("product__discount", "product__packing_type")
 
             items_in_cart = [{
                 "id"               : item.id,
@@ -63,13 +63,14 @@ class CartView(View):
                 "is_soldout"       : item.product.is_soldout,
                 "cart_packing_type": item.product.packing_type.cart_packing_type,
                 "image_url"        : item.product.image_url,
-                "selected"         : False,
+                "selected"         : item.is_selected,
             }for item in cart]
 
             return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart": items_in_cart}, status=200)
 
         except Cart.DoesNotExist:
             return JsonResponse({"MESSAGE": "SUCCESS", "items_in_cart":[]}, status=200)
+
 
     # @login_required
     def delete(self, request):
@@ -84,6 +85,7 @@ class CartView(View):
             return JsonResponse({"MESSAGE": "KEY_ERROR => " + e.args[0]}, status=400)
         except Cart.DoesNotExist:
             return JsonResponse({"MESSAGE": "ITEM_DOES_NOT_EXIST"}, status=400)
+
 
     # @login_required
     def patch(self, request):
