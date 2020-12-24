@@ -17,16 +17,15 @@ class CartView(View):
     def post(self, request):
         try:
             data = json.loads(request.body)
-            user_id = str(request.user.id)
 
             new_order, flag = Order.objects.get_or_create(
-                user_id    = user_id,
+                user_id    = request.user.id,
                 status_id  = 1,
-                address_id = Address.objects.get(user_id=user_id, is_active=1).id,
+                address_id = Address.objects.get(user_id=request.user.id, is_active=1).id,
                 payment_method_id = 1,
             )
-            if not flag:
-                new_order.order_number = user_id + "-" + datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
+            if flag:
+                new_order.order_number = f"{request.user.id}-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}"
                 new_order.save()
 
             new_order_id = new_order.id
@@ -52,8 +51,7 @@ class CartView(View):
     @signin_decorator
     def get(self, request):
         try:
-            user_id = request.user.id
-            cart = Cart.objects.filter(order__user_id=user_id, order__status=1).prefetch_related("product__discount", "product__packing_type")
+            cart = Cart.objects.filter(order__user_id=request.user.id, order__status=1).prefetch_related("product__discount", "product__packing_type")
 
             items_in_cart = [{
                 "id"                : item.id,
@@ -124,16 +122,15 @@ class OftenBuyingView(View):
     def post(self, request):
         try:
             data    = json.loads(request.body)
-            user_id = request.user.id
 
             if not Product.objects.filter(id=data['product_id']).exists():
                 return JsonResponse({'MESSAGE': 'PRODUCT_DOES_NOT_EXIST'}, status=400)
 
-            if OftenBuying.objects.filter(user_id=user_id, product_id=data['product_id']).exists():
+            if OftenBuying.objects.filter(user_id=request.user.id, product_id=data['product_id']).exists():
                 return JsonResponse({'MESSAGE': 'PRODUCT_ALREADY_EXIST_IN_OFTEN_BUYING'}, status=400)
 
             OftenBuying.objects.create(
-                user_id    = user_id,
+                user_id    = request.user.id,
                 product_id = data['product_id'],
             )
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=201)
@@ -144,8 +141,7 @@ class OftenBuyingView(View):
     @signin_decorator
     def get(self, request):
         try:
-            user_id      = request.user.id
-            user         = User.objects.get(id=user_id)
+            user         = User.objects.get(id=request.user.id)
             often_buying = user.oftenbuying_set.all().select_related('product')
 
             items_in_often_buying = [{
