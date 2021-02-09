@@ -41,7 +41,7 @@
 ### **Back-End**
 
 - 김원희 : [https://github.com/supersaloon](https://github.com/supersaloon)
-- 이주형 : [https://github.com/jacobjuhyunglee](https://github.com/jacobjuhyunglee)
+- 이주형 : [https://github.com/jacobjlee](https://github.com/jacobjlee)
 - 이현주 : [https://github.com/hjulee12](https://github.com/hjulee12)
 
 ## **구현한 기능**
