@@ -13,15 +13,19 @@ from .models                 import User
 def signin_decorator(func):
     def wrapper(self, request, *args, **kwargs): 
 
-        access_token    = request.headers.get("Authorization", None)  
+        access_token    = request.headers.get("Authorization", None)
+        print(f'access_token: {access_token}')
 
         if "Authorization" ==  None:
             return JsonResponse({"message":"INVALID_LOGIN"}, status=401)
         
         try:
             token_payload   = jwt.decode(access_token, SECRET_KEY, ALGORITHM)
-            user            = User.objects.get(account=token_payload['id']) 
+            print(f'token_payload: {token_payload}')
+            user            = User.objects.get(account=token_payload['id'])
+            print(f'user: {user}')
             request.user    = user
+            print(f'request.user: {request.user}')
 
             return func(self, request, *args, **kwargs)
 

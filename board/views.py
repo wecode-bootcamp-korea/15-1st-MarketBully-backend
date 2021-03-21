@@ -54,6 +54,12 @@ class ReviewView(View):
         try:
             data = json.loads(request.body)
 
+            if data.get('help') == "True":
+                review = Review.objects.get(id=review_id)
+                review.help_count += 1
+                review.save()
+                return JsonResponse({'MESSAGE': 'SUCCESS'}, status=200)
+
             review = Review.objects.get(id=review_id, author_id=request.user.id,)
             if data.get('title'):
                 review.title = data.get('title')
@@ -61,8 +67,6 @@ class ReviewView(View):
                 review.contents = data.get('contents')
             if data.get('image_url'):
                 review.image_url = data.get('image_url')
-            if data.get('help') == "True":
-                review.help_count += 1
             review.save()
 
             return JsonResponse({'MESSAGE': 'SUCCESS'}, status=200)
@@ -91,7 +95,7 @@ class ReviewListView(View):
             limit  = int(request.GET.get('limit'), 10)
             limit += offset
 
-            reviews = Review.objects.order_by('-create_at').filter(product_id=product_id)
+            reviews = Review.objects.order_by('-created_at').filter(product_id=product_id)
 
             review_list = [{
                 'id'         : review.id,
@@ -101,6 +105,8 @@ class ReviewListView(View):
                 'hit_count'  : review.hit_count,
                 'image_url'  : review.image_url,
                 'created_at' : review.created_at,
+                'writer'     : review.author.name,
+                'show'       : "False",
 
             }for review in reviews[offset:limit]]
 
@@ -196,6 +202,8 @@ class QuestionListView(View):
                 'contents'   : question.contents,
                 'private'    : question.is_private,
                 'created_at' : question.created_at,
+                'writer'     : question.author.name,
+                'show'       : "False",
 
             }for question in questions[offset:limit]]
 
