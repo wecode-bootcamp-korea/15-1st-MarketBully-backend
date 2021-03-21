@@ -44,8 +44,8 @@ class TermsAndCondition(models.Model):
         db_table = 'terms_and_conditions'
 
 class Address(models.Model):
-    name      = models.CharField(max_length=200)
-    user      = models.ForeignKey('User', on_delete=models.CASCADE)
+    name    = models.CharField(max_length=200)
+    user    = models.ForeignKey('User', on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
 
     class Meta:

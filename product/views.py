@@ -8,7 +8,7 @@ from .models            import Category, Subcategory, Product
 class ProductDetailView(View):
     def get(self, request, product_id):
         try:
-            product = Product.objects.select_related('discount', 'delivery_type', 'origin', 'packing_type').prefetch_related('productdescription_set', 'detailedimage_set').get(id=product_id)
+            product = Product.objects.select_related('discount', 'delivery_type', 'origin', 'packing_type', 'subcategory').prefetch_related('productdescription_set', 'detailedimage_set').get(id=product_id)
 
             product_detail = {
                 'id'                    : product.id,
@@ -27,6 +27,7 @@ class ProductDetailView(View):
                 'allergy'               : product.allergy,
                 'expiration_date'       : product.expiration_date,
                 'notice'                : product.notice,
+                'subcategory_id'        : product.subcategory.id,
                 'content'               : product.productdescription_set.get().content,
                 'product_image_url'     : product.detailedimage_set.get().product_image_url,
                 'description_image_url' : product.detailedimage_set.get().description_image_url
@@ -49,7 +50,7 @@ class ProductListView(View):
                 'name'                : product.name,
                 'subtitle'            : product.subtitle,
                 'price'               : product.price,
-                'discount_percentage' : product.discount.percentage,
+                'discount_percentage' : product.discount.percentage if subcategory_id else "0",
                 'is_soldout'          : product.is_soldout,
                 'image_url'           : product.image_url,
                 } for product in products[offset:limit]]
